@@ -1,0 +1,74 @@
+enum SlotSource {
+  RECURRING
+  ONE_OFF
+}
+
+enum SlotStatus {
+  OPEN
+  BOOKED
+  BLOCKED // trainer manually blocks time off, doesn't free up on cancel
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+/// The recurring *pattern* a trainer sets, e.g. "every Tuesday 7-8am"
+model AvailabilityRule {
+  id             String    @id @default(cuid())
+  trainerId      String
+  trainer        Trainer   @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+
+  dayOfWeek      Int       // 0 = Sunday ... 6 = Saturday
+  startMinute    Int       // minutes since midnight, e.g. 540 = 9:00 AM
+  endMinute      Int       // must be > startMinute, same-day only
+
+  effectiveFrom  DateTime
+  effectiveUntil DateTime? // null = repeats indefinitely
+  isActive       Boolean   @default(true)
+
+  slots          AvailabilitySlot[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt  DateTime          @default null
+
+  @@index([trainerId, dayOfWeek])
+}
+
+/// A concrete, bookable block of time. Materialized from a rule, or created
+/// directly as a one-off. This is the row bookings actually attach to.
+model AvailabilitySlot {
+  id         String            @id @default(cuid())
+  trainerId  String
+  trainer    Trainer           @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+
+  ruleId     String?
+  rule       AvailabilityRule? @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  source     SlotSource        @default(ONE_OFF)
+
+  startTime  DateTime
+  endTime    DateTime
+  status     SlotStatus        @default(OPEN)
+
+  booking    Booking?
+
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  deletedAt  DateTime          @default null
+
+  @@unique([trainerId, startTime, endTime])
+  @@index([trainerId, startTime])
+  @@index([trainerId, status])
+}
+
+model Booking {
+  id         String        @id @default(cuid())
+  slotId     String        @unique
+  slot       AvailabilitySlot @relation(fields: [slotId], references: [id])
+  clientId   String
+  status     BookingStatus @default(CONFIRMED)
+  createdAt  DateTime      @default(now())
+  cancelledAt DateTime?
+  deletedAt  DateTime          @default null
+}
