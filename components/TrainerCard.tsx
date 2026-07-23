@@ -1,8 +1,8 @@
 import Link from "next/link";
 import Avatar from "./Avatar";
-import { Trainer } from "@/data/trainers";
+import type { TrainerCard } from "@/lib/trainers";
 
-const TrainerCard = ({ trainer }: { trainer: Trainer }) => {
+const TrainerCard = ({ trainer }: { trainer: TrainerCard }) => {
   return (
     <div className="bg-card border border-line rounded-md p-5 flex flex-col gap-3 transition-all duration-150 hover:-translate-y-[3px] hover:shadow-[0_10px_24px_rgba(23,27,31,.08)]">
       <Avatar initials={trainer.initials} color={trainer.color} size="md" />

@@ -3,11 +3,7 @@ import SiteHeader from "@/components/SiteHeader";
 import Avatar from "@/components/Avatar";
 import Tag from "@/components/Tag";
 import Button from "@/components/Button";
-import { trainers } from "@/data/trainers";
-
-export function generateStaticParams() {
-  return trainers.map((t) => ({ trainerId: t.id }));
-}
+import { getTrainerById } from "@/lib/trainers";
 
 export default async function TrainerProfilePage({
   params,
@@ -15,8 +11,10 @@ export default async function TrainerProfilePage({
   params: Promise<{ trainerId: string }>;
 }) {
   const { trainerId } = await params;
-  const trainer = trainers.find((t) => t.id === trainerId);
+  const id = Number(trainerId);
+  if (Number.isNaN(id)) notFound();
 
+  const trainer = await getTrainerById(id);
   if (!trainer) notFound();
 
   return (
@@ -53,9 +51,9 @@ export default async function TrainerProfilePage({
                     Closed
                   </div>
                 ) : (
-                  day.slots.map((slot) => (
+                  day.slots.map((slot, i) => (
                     <div
-                      key={slot.time}
+                      key={slot.time + i}
                       className={`rounded-[3px] text-[10px] py-1.5 px-0.5 mb-1 ${
                         slot.free
                           ? "bg-moss-tint text-moss font-semibold"
@@ -72,9 +70,9 @@ export default async function TrainerProfilePage({
 
           <h3 className="font-body text-base font-semibold mt-[34px]">Services offered</h3>
           <div className="mt-3.5">
-            {trainer.services.map((svc) => (
+            {trainer.services.map((svc, i) => (
               <div
-                key={svc.name + svc.sub}
+                key={svc.name + i}
                 className="bg-card border border-line rounded-md flex justify-between items-center py-[18px] px-5 mb-2.5 cursor-pointer hover:border-steel transition-colors"
               >
                 <div>
@@ -91,8 +89,8 @@ export default async function TrainerProfilePage({
           <div className="bg-card border border-line rounded-md p-[22px] mb-4">
             <h4 className="font-body text-sm font-semibold">Certifications</h4>
             <ul className="mt-3.5 flex flex-col gap-2.5">
-              {trainer.certifications.map((cert) => (
-                <li key={cert} className="text-[13px] flex gap-2 items-center text-ink-soft">
+              {trainer.certifications.map((cert, i) => (
+                <li key={i} className="text-[13px] flex gap-2 items-center text-ink-soft">
                   <span className="w-1.5 h-1.5 rounded-full bg-flame flex-shrink-0" />
                   {cert}
                 </li>
