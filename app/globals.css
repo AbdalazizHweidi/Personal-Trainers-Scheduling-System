@@ -1,23 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@theme {
+  --color-ink: #171b1f;
+  --color-ink-soft: #2b3138;
+  --color-paper: #eceee8;
+  --color-paper-dim: #e1e4dc;
+  --color-card: #ffffff;
+  --color-steel: #5b6670;
+  --color-steel-line: #c7cec5;
+  --color-line: #d7dad2;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-flame: #ff5a1f;
+  --color-flame-dark: #d94714;
+  --color-flame-tint: #ffe6da;
+
+  --color-moss: #3f6b48;
+  --color-moss-tint: #e2ede2;
+
+  --color-chalk: #c98f16;
+  --color-chalk-tint: #faedd0;
+
+  --font-display: "Bebas Neue", sans-serif;
+  --font-body: "IBM Plex Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+  font-weight: 400;
 }
