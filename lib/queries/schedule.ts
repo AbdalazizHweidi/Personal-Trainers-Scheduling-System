@@ -15,7 +15,7 @@ export async function getTodaysBoard(supabase: SupabaseClient): Promise<Schedule
   const { data: slots, error: slotsError } = await supabase
     .from("availability_slots")
     .select("id, start_time, trainers(full_name)")
-    //.eq("slot_date", today)
+    .eq("slot_date", today)
     .is("deleted_at", null)
     .order("start_time", { ascending: true });
 
