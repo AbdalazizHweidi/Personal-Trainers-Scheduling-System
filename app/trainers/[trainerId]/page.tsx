@@ -73,12 +73,12 @@ export default async function TrainerProfilePage({ params }: { params: Promise<{
             </div>
           </div>
 
-          <Link
-            href={`/booking/${trainer.id}`}
-            className="inline-flex shrink-0 items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-          >
-            Book with {trainer.full_name.split(" ")[0]}
-          </Link>
+        <Link
+  href={`/booking/${trainer.id}`}
+  className="inline-flex shrink-0 items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+>
+  Book with {trainer.full_name.split(" ")[0]}
+</Link>
         </div>
       </div>
 
