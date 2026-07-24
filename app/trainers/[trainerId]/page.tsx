@@ -50,9 +50,17 @@ export default async function TrainerProfilePage({ params }: { params: Promise<{
       {/* Profile hero */}
       <div className="border-b border-border">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-start gap-6 px-6 py-12 md:flex-row md:items-center md:px-10">
-          <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full bg-primary font-display text-4xl text-primary-foreground">
-            {initials}
-          </div>
+          {trainer.photo_url ? (
+            <img
+              src={trainer.photo_url}
+              alt={trainer.full_name}
+              className="h-28 w-28 shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full bg-primary font-display text-4xl text-primary-foreground">
+              {initials}
+            </div>
+          )}
 
           <div className="flex-1">
             <h1 className="font-display text-4xl text-foreground">{trainer.full_name}</h1>

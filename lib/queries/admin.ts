@@ -91,12 +91,13 @@ export type AdminTrainer = {
   specialties: string[];
   is_active: boolean;
   avg_rating: number;
+  photo_url: string | null;
 };
 
 export async function getAllTrainersAdmin(supabase: SupabaseClient): Promise<AdminTrainer[]> {
   const { data, error } = await supabase
     .from("trainers")
-    .select("id, full_name, specialties, is_active, avg_rating")
+    .select("id, full_name, specialties, is_active, avg_rating, photo_url")
     .is("deleted_at", null)
     .order("full_name", { ascending: true });
 

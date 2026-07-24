@@ -30,6 +30,7 @@ export function TrainersTable({ trainers }: { trainers: AdminTrainer[] }) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+            <th className="px-5 py-2.5 font-medium">Photo</th>
             <th className="px-5 py-2.5 font-medium">Name</th>
             <th className="px-5 py-2.5 font-medium">Specialties</th>
             <th className="px-5 py-2.5 font-medium">Rating</th>
@@ -40,6 +41,15 @@ export function TrainersTable({ trainers }: { trainers: AdminTrainer[] }) {
         <tbody>
           {trainers.map((t) => (
             <tr key={t.id} className="border-b border-border last:border-none">
+              <td className="px-5 py-3">
+                {t.photo_url ? (
+                  <img src={t.photo_url} alt="" className="h-9 w-9 rounded-full object-cover" />
+                ) : (
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted font-mono text-[10px] text-muted-foreground">
+                    —
+                  </div>
+                )}
+              </td>
               <td className="px-5 py-3 font-medium text-card-foreground">{t.full_name}</td>
               <td className="px-5 py-3">
                 <div className="flex flex-wrap gap-1">
