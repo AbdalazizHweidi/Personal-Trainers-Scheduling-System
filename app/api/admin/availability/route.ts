@@ -9,17 +9,14 @@ export async function POST(req: Request) {
   const body = await req.json();
   const supabase = createAdminClient();
 
-  const { data, error } = await supabase
-    .from("trainers")
-    .insert({
-      full_name: body.full_name,
-      bio: body.bio || null,
-      certifications: body.certifications || null,
-      specialties: body.specialties,
-    })
-    .select()
-    .single();
+  const { error } = await supabase.from("availability_slots").insert({
+    trainer_id: body.trainer_id,
+    slot_date: body.slot_date,
+    start_time: body.start_time,
+    end_time: body.end_time,
+    status: "open",
+  });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({ trainer: data }, { status: 201 });
+  return NextResponse.json({ ok: true }, { status: 201 });
 }

@@ -2,24 +2,19 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export async function POST(req: Request) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { response } = await requireAdmin();
   if (response) return response;
 
+  const { id } = await params;
   const body = await req.json();
   const supabase = createAdminClient();
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("trainers")
-    .insert({
-      full_name: body.full_name,
-      bio: body.bio || null,
-      certifications: body.certifications || null,
-      specialties: body.specialties,
-    })
-    .select()
-    .single();
+    .update({ is_active: body.is_active })
+    .eq("id", Number(id));
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({ trainer: data }, { status: 201 });
+  return NextResponse.json({ ok: true });
 }
