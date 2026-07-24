@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminTrainer } from "@/lib/queries/admin";
+import Link from "next/link";
 
 export function TrainersTable({ trainers }: { trainers: AdminTrainer[] }) {
   const router = useRouter();
@@ -11,14 +12,12 @@ export function TrainersTable({ trainers }: { trainers: AdminTrainer[] }) {
   async function toggleActive(id: number, isActive: boolean) {
     setPendingId(id);
     try {
-      const res = await fetch(`/api/admin/trainers/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_active: !isActive }),
-      });
+      const fd = new FormData();
+      fd.append("is_active", String(!isActive));
+      const res = await fetch(`/api/admin/trainers/${id}`, { method: "PATCH", body: fd });
       if (!res.ok) throw new Error("Failed to update trainer");
       router.refresh();
-    } catch (err) {
+    } catch {
       alert("Couldn't update trainer status. Try again.");
     } finally {
       setPendingId(null);
@@ -71,13 +70,14 @@ export function TrainersTable({ trainers }: { trainers: AdminTrainer[] }) {
                 </span>
               </td>
               <td className="px-5 py-3 text-right">
-                <button
-                  disabled={pendingId === t.id}
-                  onClick={() => toggleActive(t.id, t.is_active)}
-                  className="text-xs font-semibold text-primary hover:underline disabled:opacity-50"
-                >
-                  {pendingId === t.id ? "Updating…" : t.is_active ? "Deactivate" : "Activate"}
-                </button>
+                <div className="flex justify-end gap-3">
+                  <Link href={`/admin/trainers/${t.id}/edit`} className="text-xs font-semibold text-primary hover:underline">
+                    Edit
+                  </Link>
+                  <button disabled={pendingId === t.id} onClick={() => toggleActive(t.id, t.is_active)} className="text-xs font-semibold text-foreground hover:underline disabled:opacity-50">
+                    {pendingId === t.id ? "Updating…" : t.is_active ? "Deactivate" : "Activate"}
+                  </button>
+                </div>
               </td>
             </tr>
           ))}

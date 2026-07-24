@@ -206,3 +206,43 @@ export async function getAllClients(supabase: SupabaseClient): Promise<AdminClie
     bookingCount: countByClient.get(p.id) ?? 0,
   }));
 }
+
+// Admin trainer lookup — no is_active filter, since admins need to edit
+// deactivated trainers too, unlike the public getTrainerById.
+export async function getTrainerByIdAdmin(supabase: SupabaseClient, id: number) {
+  const { data, error } = await supabase
+    .from("trainers")
+    .select("id, full_name, specialties, bio, certifications, photo_url, avg_rating, is_active")
+    .eq("id", id)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+export type AdminService = {
+  id: number;
+  name: string;
+  type: string;
+  duration_minutes: number;
+  price: number;
+  is_active: boolean;
+};
+
+// Admin service list — includes inactive services, unlike the public
+// getServicesByTrainer, since admins need to see/reactivate them.
+export async function getServicesByTrainerAdmin(
+  supabase: SupabaseClient,
+  trainerId: number
+): Promise<AdminService[]> {
+  const { data, error } = await supabase
+    .from("services")
+    .select("id, name, type, duration_minutes, price, is_active")
+    .eq("trainer_id", trainerId)
+    .is("deleted_at", null)
+    .order("price", { ascending: true });
+
+  if (error) throw error;
+  return data;
+}
