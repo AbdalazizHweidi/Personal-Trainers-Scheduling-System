@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ trainerId
 
   if (!trainer) return { title: "Trainer not found | FitConnect" };
   return {
-    title: `${trainer.full_name} | FitConnect`,
+    title: trainer.full_name,
     description: trainer.bio ?? `Book a session with ${trainer.full_name} at FitConnect.`,
   };
 }
@@ -93,7 +93,7 @@ export default async function TrainerProfilePage({ params }: { params: Promise<{
       <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-10 px-6 py-12 md:grid-cols-[2fr_1fr] md:px-10">
         {/* Left column */}
         <div>
-          <h3 className="font-semibold text-foreground">This week&apos;s availability</h3>
+          <h2 className="font-semibold text-foreground">This week&apos;s availability</h2>
           <div className="mt-4 grid grid-cols-7 gap-2">
             {availability.map((day) => (
               <div key={day.date} className="text-center">
@@ -120,7 +120,7 @@ export default async function TrainerProfilePage({ params }: { params: Promise<{
             ))}
           </div>
 
-          <h3 className="mt-10 font-semibold text-foreground">Services offered</h3>
+          <h2 className="mt-10 font-semibold text-foreground">Services offered</h2>
           <div className="mt-4 flex flex-col gap-2.5">
             {services.length === 0 ? (
               <p className="text-sm text-muted-foreground">No services listed yet.</p>
@@ -145,7 +145,7 @@ export default async function TrainerProfilePage({ params }: { params: Promise<{
         <div className="flex flex-col gap-4">
           {trainer.certifications && (
             <div className="rounded-lg border border-border bg-card p-5">
-              <h4 className="text-sm font-semibold text-card-foreground">Certifications</h4>
+              <h3 className="text-sm font-semibold text-card-foreground">Certifications</h3>
               <div className="mt-3 flex items-start gap-2 text-sm text-muted-foreground">
                 <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
                 {trainer.certifications}
@@ -154,7 +154,7 @@ export default async function TrainerProfilePage({ params }: { params: Promise<{
           )}
 
           <div className="rounded-lg border border-border bg-card p-5">
-            <h4 className="text-sm font-semibold text-card-foreground">Client rating</h4>
+            <h3 className="text-sm font-semibold text-card-foreground">Client rating</h3>
             <div className="mt-2 font-display text-4xl text-foreground">
               {trainer.avg_rating.toFixed(1)}
               <span className="font-sans text-sm font-normal text-muted-foreground"> / 5</span>

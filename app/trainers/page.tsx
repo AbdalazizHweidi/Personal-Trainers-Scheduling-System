@@ -10,7 +10,7 @@ import { Navbar } from "../nav";
 const SPECIALTIES = ["Strength", "Mobility", "Performance", "Nutrition"];
 
 export const metadata = {
-  title: "Our Trainers | FitConnect",
+  title: "Our Trainers",
   description:
     "Meet FitConnect's certified personal trainers — strength, mobility, performance, and nutrition coaching.",
 };
