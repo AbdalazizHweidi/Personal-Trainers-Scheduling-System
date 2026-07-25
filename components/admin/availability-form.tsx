@@ -27,11 +27,16 @@ export function AvailabilityForm({ trainers }: { trainers: AdminTrainer[] }) {
           end_time: formData.get("end_time"),
         }),
       });
-      if (!res.ok) throw new Error();
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error ?? `Request failed (${res.status})`);
+      }
+
       (e.target as HTMLFormElement).reset();
       router.refresh();
-    } catch {
-      setError("Couldn't add slot. Check the times don't overlap an existing one.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't add slot.");
     } finally {
       setLoading(false);
     }
