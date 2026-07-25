@@ -35,7 +35,7 @@ export function TrainerPreview({ trainers }: { trainers: FeaturedTrainer[] }) {
 
       <div ref={scrollRef} className="flex gap-5 overflow-x-auto pb-2">
         {trainers.map((t) => (
-          <TrainerCard key={t.id} id={t.id} full_name={t.full_name} specialties={t.specialties} />
+          <TrainerCard key={t.id} id={t.id} full_name={t.full_name} specialties={t.specialties} photo_url={t.photo_url} />
         ))}
       </div>
     </section>

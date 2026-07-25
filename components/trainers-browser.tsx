@@ -90,7 +90,12 @@ export function TrainersBrowser({
       {filtered.length > 0 ? (
         <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((t) => (
-            <TrainerCard key={t.id} trainer={t} fromPrice={priceByTrainer[t.id]} />
+            <TrainerCard 
+              key={t.id} 
+              id={t.id} 
+              full_name={t.full_name} 
+              specialties={t.specialties} 
+            />
           ))}
         </div>
       ) : (
