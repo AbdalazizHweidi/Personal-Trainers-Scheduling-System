@@ -66,18 +66,27 @@ export default async function PaymentsPage() {
                   >
                     ${p.amount}
                   </td>
-                  <td className="px-[14px] py-[13px]" style={{ borderBottom: border }}>
-                    <span
-                      className="inline-block rounded-full px-[9px] py-1 text-[10px] uppercase tracking-[0.04em]"
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        background: p.status === "success" ? "#e2ede2" : "#ffe6da",
-                        color: p.status === "success" ? "#3f6b48" : "#d94714",
-                      }}
-                    >
-                      {p.status}
-                    </span>
-                  </td>
+                <td className="px-[14px] py-[13px]" style={{ borderBottom: border }}>
+  {p.refunded ? (
+    <span
+      className="inline-block rounded-full px-[9px] py-1 text-[10px] uppercase tracking-[0.04em]"
+      style={{ fontFamily: "var(--font-mono)", background: "#faedd0", color: "#c98f16" }}
+    >
+      Refunded
+    </span>
+  ) : (
+    <span
+      className="inline-block rounded-full px-[9px] py-1 text-[10px] uppercase tracking-[0.04em]"
+      style={{
+        fontFamily: "var(--font-mono)",
+        background: p.status === "success" ? "#e2ede2" : "#ffe6da",
+        color: p.status === "success" ? "#3f6b48" : "#d94714",
+      }}
+    >
+      {p.status}
+    </span>
+  )}
+</td>
                 </tr>
               );
             })}

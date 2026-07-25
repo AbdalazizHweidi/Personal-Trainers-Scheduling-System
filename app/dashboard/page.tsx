@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getDashboardData, type BookingRow } from "@/lib/queries/dashboard";
+import { getDashboardData } from "@/lib/queries/dashboard";
 import { formatTime } from "@/lib/utils";
+import { BookingActions } from "@/components/booking-actions";
+import type { ClientBooking } from "@/lib/queries/client-data";
 
 const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   confirmed: { bg: "#e2ede2", color: "#3f6b48" },
   pending: { bg: "#faedd0", color: "#c98f16" },
   completed: { bg: "#e1e4dc", color: "#5b6670" },
   cancelled: { bg: "#ffe6da", color: "#d94714" },
+  cancelled_by_client: { bg: "#ffe6da", color: "#d94714" },
 };
 
 export default async function DashboardPage() {
@@ -55,10 +58,7 @@ export default async function DashboardPage() {
             <div className="text-xs" style={{ fontFamily: "var(--font-mono)", color: "#ff8f5c" }}>
               {formatRelativeDay(data.nextSession.sessionDate)}
             </div>
-            <h3
-              className="mt-1.5 text-[17px] font-semibold"
-              style={{ fontFamily: "var(--font-body)" }}
-            >
+            <h3 className="mt-1.5 text-[17px] font-semibold" style={{ fontFamily: "var(--font-body)" }}>
               {data.nextSession.serviceName} · with {data.nextSession.trainerName}
             </h3>
           </div>
@@ -66,12 +66,6 @@ export default async function DashboardPage() {
             <div className="text-[15px]" style={{ fontFamily: "var(--font-mono)" }}>
               {formatDisplayDate(data.nextSession.sessionDate)} · {formatTime(data.nextSession.startTime)}
             </div>
-            <button
-              className="mt-2 rounded-[3px] border px-[14px] py-2 text-[13px] font-semibold text-white"
-              style={{ borderColor: "#3a4048" }}
-            >
-              Reschedule
-            </button>
           </div>
         </div>
       ) : (
@@ -147,7 +141,7 @@ export default async function DashboardPage() {
   );
 }
 
-function BookingTableRow({ booking, isLast }: { booking: BookingRow; isLast: boolean }) {
+function BookingTableRow({ booking, isLast }: { booking: ClientBooking; isLast: boolean }) {
   const pill = STATUS_STYLES[booking.status];
   const border = isLast ? "none" : "1px solid #d7dad2";
 
@@ -167,22 +161,23 @@ function BookingTableRow({ booking, isLast }: { booking: BookingRow; isLast: boo
           className="inline-block rounded-full px-[9px] py-1 text-[10px] uppercase tracking-[0.04em]"
           style={{ fontFamily: "var(--font-mono)", background: pill.bg, color: pill.color }}
         >
-          {booking.status}
+          {booking.status.replace("_", " ")}
         </span>
       </td>
       <td className="px-[14px] py-[13px] text-right" style={{ borderBottom: border }}>
         {booking.status === "completed" ? (
-          <Link href="/trainers" className="text-xs" style={{ color: "#5b6670" }}>
+          <Link href="/trainers" className="text-xs font-medium" style={{ color: "#5b6670" }}>
             Rebook
           </Link>
         ) : (
-          <Link
-            href={`/dashboard/bookings/${booking.id}`}
-            className="text-xs font-semibold"
-            style={{ color: "#d94714" }}
-          >
-            Manage
-          </Link>
+          <BookingActions
+            bookingId={booking.id}
+            status={booking.status}
+            sessionDate={booking.sessionDate}
+            startTime={booking.startTime}
+            rescheduleCount={booking.rescheduleCount}
+            price={booking.price}
+          />
         )}
       </td>
     </tr>
