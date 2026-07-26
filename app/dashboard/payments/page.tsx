@@ -1,3 +1,4 @@
+
 import { createClient } from "@/lib/supabase/server";
 import { getPaymentsForClient } from "@/lib/queries/client-data";
 
@@ -94,5 +95,6 @@ export default async function PaymentsPage() {
         </table>
       </div>
     </>
+
   );
 }

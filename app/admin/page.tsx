@@ -1,43 +1,40 @@
-import { createClient } from "@/lib/supabase/server";
+
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getAdminStats, getTodaysBookings, getTrainerRoster } from "@/lib/queries/admin";
+import { StatCard } from "@/components/admin/stat-card";
+import { BookingsTable } from "@/components/admin/bookings-table";
+import { TrainerRoster } from "@/components/admin/trainer-roster";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminOverviewPage() {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
-  const [{ count: trainerCount }, { count: bookingCount }, { count: clientCount }] = await Promise.all([
-    supabase.from("trainers").select("id", { count: "exact", head: true }).eq("is_active", true),
-    supabase.from("bookings").select("id", { count: "exact", head: true }).is("deleted_at", null),
-    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "client"),
+  const [stats, bookings, roster] = await Promise.all([
+    getAdminStats(supabase),
+    getTodaysBookings(supabase),
+    getTrainerRoster(supabase),
   ]);
 
   return (
-    <>
-      <h1 className="text-[30px]" style={{ fontFamily: "var(--font-display)" }}>
-        Admin overview
-      </h1>
-      <p className="mt-1 text-[13px]" style={{ color: "#5b6670" }}>
-        Platform-wide numbers at a glance.
-      </p>
-
-      <div className="mt-7 grid grid-cols-1 gap-4 md:grid-cols-3">
-        <StatCard label="Active trainers" value={String(trainerCount ?? 0)} />
-        <StatCard label="Total bookings" value={String(bookingCount ?? 0)} />
-        <StatCard label="Clients" value={String(clientCount ?? 0)} />
+    <div>
+      <div className="mb-8">
+        <h1 className="font-display text-3xl text-foreground">Studio overview</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+        </p>
       </div>
-    </>
-  );
-}
 
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md p-[18px]" style={{ background: "#fff", border: "1px solid #d7dad2" }}>
-      <div
-        className="text-[11px] uppercase tracking-[0.06em]"
-        style={{ fontFamily: "var(--font-mono)", color: "#5b6670" }}
-      >
-        {label}
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Sessions today" value={String(stats.sessionsToday)} delta={`${stats.openSlotsToday} open slots left`} />
+        <StatCard label="Revenue this week" value={`$${stats.revenueThisWeek.toFixed(0)}`} />
+        <StatCard label="New clients" value={String(stats.newClientsThisWeek)} delta="This week" />
+        <StatCard label="Utilization" value={`${stats.utilization}%`} delta="Across all trainers" />
       </div>
-      <div className="mt-1.5 text-[30px]" style={{ fontFamily: "var(--font-display)" }}>
-        {value}
+
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[2fr_1fr]">
+        <BookingsTable rows={bookings} />
+        <TrainerRoster items={roster} />
       </div>
     </div>
   );

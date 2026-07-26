@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardData } from "@/lib/queries/dashboard";
@@ -217,4 +218,5 @@ function formatRelativeDay(dateStr: string) {
   if (diffDays === 1) return "NEXT SESSION · TOMORROW";
   if (diffDays > 1) return `NEXT SESSION · IN ${diffDays} DAYS`;
   return `NEXT SESSION · ${formatDisplayDate(dateStr).toUpperCase()}`;
+
 }

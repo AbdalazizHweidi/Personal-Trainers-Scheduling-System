@@ -9,6 +9,11 @@ import { TrainerPreview } from "@/components/home/trainer-preview";
 import { Navbar } from "./nav";
 import { Footer } from "@/components/site-footer";
 
+export const metadata = {
+  title: "FitConnect | Personal Training Studio",
+  description:
+    "One downtown studio, certified trainers, and a booking system that gets out of your way. Book 1-on-1, group, or online coaching sessions today.",
+};
 export const revalidate = 60;
 
 export default async function HomePage() {
