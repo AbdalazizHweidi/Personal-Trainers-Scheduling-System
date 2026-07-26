@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { BookCta } from "@/components/book-cta";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -11,6 +14,37 @@ const NAV_LINKS = [
 
 export function Navbar() {
   const pathname = usePathname();
+  const supabase = createClient();
+
+  const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadUser() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!mounted) return;
+      setIsLoggedIn(!!user);
+      setLoading(false);
+    }
+
+    loadUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      loadUser();
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
@@ -45,18 +79,35 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Link
-            href="/login"
-            className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline"
-          >
-            Log in
-          </Link>
-          <Link
-            href="/booking"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-          >
-            Book a session
-          </Link>
+          {!loading && (
+            <>
+              {isLoggedIn ? (
+                <form action="/auth/signout" method="post" className="hidden sm:block">
+                  <button
+                    type="submit"
+                    className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    Sign out
+                  </button>
+                </form>
+              ) : (
+                <Link
+                  href="/login"
+                  className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline"
+                >
+                  Log in
+                </Link>
+              )}
+
+              <BookCta
+                isLoggedIn={isLoggedIn}
+                href="/trainers"
+                className="inline-flex items-center justify-center rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+              >
+                Book a session
+              </BookCta>
+            </>
+          )}
         </div>
       </div>
     </header>

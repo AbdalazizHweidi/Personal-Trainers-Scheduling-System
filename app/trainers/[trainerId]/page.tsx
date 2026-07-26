@@ -7,6 +7,7 @@ import { getWeekAvailability } from "@/lib/queries/availability";
 import { formatTime } from "@/lib/utils";
 import { Navbar } from "@/app/nav";
 import { Footer } from "@/components/site-footer";
+import { BookCta } from "@/components/book-cta";
 
 function parseTrainerId(id: string): number | null {
   const n = Number(id);
@@ -34,6 +35,11 @@ export default async function TrainerProfilePage({ params }: { params: Promise<{
   if (trainerId === null) notFound();
 
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const trainer = await getTrainerById(supabase, trainerId);
   if (!trainer) notFound();
 
@@ -81,12 +87,13 @@ export default async function TrainerProfilePage({ params }: { params: Promise<{
             </div>
           </div>
 
-        <Link
-  href={`/booking/${trainer.id}`}
-  className="inline-flex shrink-0 items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
->
-  Book with {trainer.full_name.split(" ")[0]}
-</Link>
+          <BookCta
+            isLoggedIn={!!user}
+            href={`/booking/${trainer.id}`}
+            className="inline-flex shrink-0 items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+          >
+            Book with {trainer.full_name.split(" ")[0]}
+          </BookCta>
         </div>
       </div>
 

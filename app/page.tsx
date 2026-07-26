@@ -19,6 +19,10 @@ export const revalidate = 60;
 export default async function HomePage() {
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const [trainers, programs, board] = await Promise.all([
     getFeaturedTrainers(supabase),
     getFeaturedPrograms(supabase),
@@ -28,7 +32,7 @@ export default async function HomePage() {
   return (
     <>
       <Navbar />
-      <Hero>
+      <Hero isLoggedIn={!!user}>
         <TodayBoard initialRows={board} />
       </Hero>
       <Programs programs={programs} />

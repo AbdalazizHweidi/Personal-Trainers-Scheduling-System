@@ -46,12 +46,14 @@ export function AdminSidebar({ userName }: { userName: string }) {
 
       <div className="mt-auto flex flex-col gap-1 border-t border-background/10 pt-4">
         <span className="px-3 text-xs text-background/50">{userName}</span>
-        <Link
-          href="/"
-          className="rounded-md px-3 py-2.5 text-sm font-medium text-background/70 hover:bg-background/10 hover:text-background"
-        >
-          Log out
-        </Link>
+        <form action="/auth/signout" method="post">
+          <button
+            type="submit"
+            className="w-full rounded-md px-3 py-2.5 text-left text-sm font-medium text-background/70 hover:bg-background/10 hover:text-background"
+          >
+            Log out
+          </button>
+        </form>
       </div>
     </aside>
   );
