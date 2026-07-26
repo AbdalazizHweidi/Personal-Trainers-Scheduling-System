@@ -1,4 +1,5 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createPrivilegedClient } from "@/lib/supabase/admin";
+import { requireAdminAccess } from "@/lib/auth/access";
 import { getUpcomingAvailability, getAllTrainersAdmin } from "@/lib/queries/admin";
 import { AvailabilityForm } from "@/components/admin/availability-form";
 import { AvailabilityTable } from "@/components/admin/availability-table";
@@ -6,7 +7,8 @@ import { AvailabilityTable } from "@/components/admin/availability-table";
 export const dynamic = "force-dynamic";
 
 export default async function AdminAvailabilityPage() {
-  const supabase = createAdminClient();
+  await requireAdminAccess();
+  const supabase = await createPrivilegedClient();
   const [slots, trainers] = await Promise.all([
     getUpcomingAvailability(supabase),
     getAllTrainersAdmin(supabase),

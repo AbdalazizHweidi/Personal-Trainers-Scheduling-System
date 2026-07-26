@@ -1,19 +1,8 @@
-import { createClient } from "@/lib/supabase/server"
+import { getAuthenticatedUserAndProfile } from "@/lib/auth/access"
 import type { Profile } from "@/lib/types"
 
 export async function getSession() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) return { user: null, profile: null as Profile | null }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single()
+  const { user, profile } = await getAuthenticatedUserAndProfile()
 
   return { user, profile: (profile as Profile) ?? null }
 }

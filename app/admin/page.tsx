@@ -1,5 +1,6 @@
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createPrivilegedClient } from "@/lib/supabase/admin";
+import { requireAdminAccess } from "@/lib/auth/access";
 import { getAdminStats, getTodaysBookings, getTrainerRoster } from "@/lib/queries/admin";
 import { StatCard } from "@/components/admin/stat-card";
 import { BookingsTable } from "@/components/admin/bookings-table";
@@ -8,7 +9,8 @@ import { TrainerRoster } from "@/components/admin/trainer-roster";
 export const dynamic = "force-dynamic";
 
 export default async function AdminOverviewPage() {
-  const supabase = createAdminClient();
+  await requireAdminAccess();
+  const supabase = await createPrivilegedClient();
 
   const [stats, bookings, roster] = await Promise.all([
     getAdminStats(supabase),

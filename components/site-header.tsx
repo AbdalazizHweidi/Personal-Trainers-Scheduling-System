@@ -2,9 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { Dumbbell, Menu, X, LogOut, LayoutDashboard, Shield } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 
 export function SiteHeader({
@@ -16,14 +14,10 @@ export function SiteHeader({
   name: string | null
   role: "client" | "admin" | null
 }) {
-  const router = useRouter()
   const [open, setOpen] = useState(false)
 
   async function signOut() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push("/")
-    router.refresh()
+    window.location.assign("/auth/signout")
   }
 
   const navLinks = [

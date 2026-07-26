@@ -1,12 +1,14 @@
 import Link from "next/link";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createPrivilegedClient } from "@/lib/supabase/admin";
+import { requireAdminAccess } from "@/lib/auth/access";
 import { getAllTrainersAdmin } from "@/lib/queries/admin";
 import { TrainersTable } from "@/components/admin/trainers-table";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminTrainersPage() {
-  const supabase = createAdminClient();
+  await requireAdminAccess();
+  const supabase = await createPrivilegedClient();
   const trainers = await getAllTrainersAdmin(supabase);
 
   return (

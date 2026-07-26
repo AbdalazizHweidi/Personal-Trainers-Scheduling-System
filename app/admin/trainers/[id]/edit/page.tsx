@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createPrivilegedClient } from "@/lib/supabase/admin";
+import { requireAdminAccess } from "@/lib/auth/access";
 import { getTrainerByIdAdmin, getServicesByTrainerAdmin } from "@/lib/queries/admin";
 import { TrainerEditForm } from "@/components/admin/trainer-edit-form";
 import { TrainerServices } from "@/components/admin/trainer-services";
@@ -12,7 +13,8 @@ export default async function EditTrainerPage({ params }: { params: Promise<{ id
   const trainerId = Number(id);
   if (Number.isNaN(trainerId)) notFound();
 
-  const supabase = createAdminClient();
+  await requireAdminAccess();
+  const supabase = await createPrivilegedClient();
   const trainer = await getTrainerByIdAdmin(supabase, trainerId);
   if (!trainer) notFound();
 

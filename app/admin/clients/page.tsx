@@ -1,11 +1,13 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createPrivilegedClient } from "@/lib/supabase/admin";
+import { requireAdminAccess } from "@/lib/auth/access";
 import { getAllClients } from "@/lib/queries/admin";
 import { ClientsTable } from "@/components/admin/clients-table";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminClientsPage() {
-  const supabase = createAdminClient();
+  await requireAdminAccess();
+  const supabase = await createPrivilegedClient();
   const clients = await getAllClients(supabase);
 
   return (

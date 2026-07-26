@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createPrivilegedClient } from "@/lib/supabase/admin";
+import { requireAdminAccess } from "@/lib/auth/access";
 import { getAllBookings } from "@/lib/queries/admin";
 import { BookingsTableAdmin } from "@/components/admin/bookings-table-admin";
 
@@ -13,7 +14,8 @@ export default async function AdminBookingsPage({
   searchParams: Promise<{ status?: string }>;
 }) {
   const { status } = await searchParams;
-  const supabase = createAdminClient();
+  await requireAdminAccess();
+  const supabase = await createPrivilegedClient();
   const bookings = await getAllBookings(supabase, { status });
 
   return (
