@@ -1,5 +1,6 @@
 import { formatTime } from "@/lib/utils";
 import { TodayBookingRow } from "@/lib/queries/admin";
+import { BookingOutcomeActions } from "@/components/admin/booking-outcome-actions";
 
 const STATUS_STYLE: Record<string, string> = {
   confirmed: "bg-success/15 text-success",
@@ -49,6 +50,14 @@ export function BookingsTable({ rows }: { rows: TodayBookingRow[] }) {
                   >
                     {r.status}
                   </span>
+                </td>
+                <td className="px-5 py-3 text-right">
+                  <BookingOutcomeActions
+                    bookingId={r.id}
+                    sessionDate={r.date}
+                    startTime={r.time}
+                    status={r.status}
+                  />
                 </td>
               </tr>
             ))

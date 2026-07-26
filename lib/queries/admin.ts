@@ -16,7 +16,13 @@ export async function getAdminStats(supabase: SupabaseClient): Promise<AdminStat
 
   const [{ data: todaySlots }, { data: payments }, { data: newClients }] = await Promise.all([
     supabase.from("availability_slots").select("status").eq("slot_date", today).is("deleted_at", null),
-    supabase.from("payments").select("amount").eq("status", "success").gte("paid_at", weekAgoStr).is("deleted_at", null),
+    supabase
+      .from("payments")
+      .select("amount")
+      .eq("status", "success")
+      .eq("refunded", false) // ← added: refunded payments no longer count as revenue
+      .gte("paid_at", weekAgoStr)
+      .is("deleted_at", null),
     supabase.from("profiles").select("id").eq("role", "client").gte("created_at", weekAgoStr),
   ]);
 
@@ -35,6 +41,7 @@ export async function getAdminStats(supabase: SupabaseClient): Promise<AdminStat
 
 export type TodayBookingRow = {
   id: number;
+  date: string;
   time: string;
   clientName: string;
   trainerName: string;
@@ -56,6 +63,7 @@ export async function getTodaysBookings(supabase: SupabaseClient): Promise<Today
 
   return (data ?? []).map((b: any) => ({
     id: b.id,
+    date: today, // ← add
     time: b.start_time,
     clientName: b.profiles?.full_name ?? "Unknown client",
     trainerName: b.trainers?.full_name ?? "Unknown trainer",
@@ -127,7 +135,13 @@ export async function getAllBookings(
     .order("session_date", { ascending: false })
     .order("start_time", { ascending: true });
 
-  if (filters.status) query = query.eq("status", filters.status);
+  if (filters.status === "cancelled") {
+    // "Cancelled" as a filter groups every cancellation reason together.
+    query = query.in("status", ["cancelled", "cancelled_by_client", "cancelled_by_trainer"]);
+  } else if (filters.status) {
+    query = query.eq("status", filters.status);
+  }
+
   if (filters.date) query = query.eq("session_date", filters.date);
 
   const { data, error } = await query;
