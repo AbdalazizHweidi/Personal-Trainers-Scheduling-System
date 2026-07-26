@@ -3,23 +3,31 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
-export async function updateProfile(formData: FormData) {
+export async function updateProfile(formData: FormData): Promise<void> {
   const fullName = formData.get("fullName") as string;
   const phone = formData.get("phone") as string;
 
   const supabase = await createClient();
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "Not logged in." };
+
+  if (!user) {
+    throw new Error("Not logged in.");
+  }
 
   const { error } = await supabase
     .from("profiles")
-    .update({ full_name: fullName, phone })
+    .update({
+      full_name: fullName,
+      phone,
+    })
     .eq("id", user.id);
 
-  if (error) return { success: false, error: error.message };
+  if (error) {
+    throw new Error(error.message);
+  }
 
   revalidatePath("/dashboard/profile");
-  return { success: true };
 }

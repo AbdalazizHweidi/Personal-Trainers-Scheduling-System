@@ -1,4 +1,3 @@
-
 import { createClient } from "@/lib/supabase/server";
 import { updateProfile } from "./actions";
 
@@ -68,6 +67,5 @@ export default async function ProfilePage() {
         </form>
       </div>
     </>
-
   );
 }
