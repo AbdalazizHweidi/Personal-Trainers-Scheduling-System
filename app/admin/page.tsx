@@ -1,3 +1,4 @@
+
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAdminStats, getTodaysBookings, getTrainerRoster } from "@/lib/queries/admin";
 import { StatCard } from "@/components/admin/stat-card";

@@ -1,21 +1,33 @@
-/**
- * TEMPORARY mock — replace once real authentication is wired up.
- *
- * Swap this for a real session lookup (Supabase Auth's getUser() +
- * a `profiles` row fetch). Every component below consumes this through
- * the CurrentUser type, so the swap should only touch this file.
- */
+import { createClient } from "@/lib/supabase/server";
+
 export type CurrentUser = {
   id: string;
   full_name: string;
+  email: string;
   role: "client" | "admin";
 };
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
-  // TODO(auth): replace with real session lookup once teammate's work lands.
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select("full_name, email, role")
+    .eq("id", user.id)
+    .single();
+
+  if (error || !profile) return null;
+
   return {
-    id: "00000000-0000-0000-0000-000000000000",
-    full_name: "Admin (mock)",
-    role: "admin",
+    id: user.id,
+    full_name: profile.full_name,
+    email: profile.email,
+    role: profile.role as "client" | "admin",
   };
 }

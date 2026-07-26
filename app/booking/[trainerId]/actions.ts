@@ -65,6 +65,7 @@ export async function submitBooking(input: SubmitBookingInput) {
 
     return { success: true as const, booking };
   } catch (err) {
+    console.error("BOOKING ERROR:", err);
     return { success: false as const, error: "Something went wrong. Please try again." };
   }
 }
