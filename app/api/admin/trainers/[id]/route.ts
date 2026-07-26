@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createPrivilegedClient } from "@/lib/supabase/admin";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { response } = await requireAdmin();
@@ -8,7 +8,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   const { id } = await params;
   const formData = await req.formData();
-  const supabase = createAdminClient();
+  const supabase = await createPrivilegedClient();
 
   const updates: Record<string, unknown> = {};
 
@@ -45,26 +45,3 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ ok: true });
 }
-
-
-
-/*import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/require-admin";
-import { createAdminClient } from "@/lib/supabase/admin";
-
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { response } = await requireAdmin();
-  if (response) return response;
-
-  const { id } = await params;
-  const body = await req.json();
-  const supabase = createAdminClient();
-
-  const { error } = await supabase
-    .from("trainers")
-    .update({ is_active: body.is_active })
-    .eq("id", Number(id));
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({ ok: true });
-}*/

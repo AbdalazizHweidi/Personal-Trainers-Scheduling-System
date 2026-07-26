@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requireDashboardAccess } from "@/lib/auth/access";
 import { fontVars } from "@/lib/fonts";
 
 export default async function DashboardLayout({
@@ -8,14 +7,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login?redirect=/dashboard");
-  }
+  await requireDashboardAccess();
 
   return (
     <div className={`${fontVars} grid min-h-screen grid-cols-1 md:grid-cols-[230px_1fr]`}>

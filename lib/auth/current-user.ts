@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUserAndProfile } from "@/lib/auth/access";
 
 export type CurrentUser = {
   id: string;
@@ -8,21 +8,9 @@ export type CurrentUser = {
 };
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
-  const supabase = await createClient();
+  const { user, profile } = await getAuthenticatedUserAndProfile();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return null;
-
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("full_name, email, role")
-    .eq("id", user.id)
-    .single();
-
-  if (error || !profile) return null;
+  if (!user || !profile) return null;
 
   return {
     id: user.id,

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createPrivilegedClient } from "@/lib/supabase/admin";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { response } = await requireAdmin();
@@ -8,7 +8,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   const { id } = await params;
   const { status } = await req.json();
-  const supabase = createAdminClient();
+  const supabase = await createPrivilegedClient();
 
   // Triggers sync_slot_status(), which reopens the linked availability slot
   // automatically on cancellation — no manual slot update needed here.

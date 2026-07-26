@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createPrivilegedClient } from "@/lib/supabase/admin";
 
 export async function POST(req: Request) {
   const { response } = await requireAdmin();
   if (response) return response;
 
   const body = await req.json();
-  const supabase = createAdminClient();
+  const supabase = await createPrivilegedClient();
 
   const { error } = await supabase.from("services").insert({
     trainer_id: body.trainer_id,

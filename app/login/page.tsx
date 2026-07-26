@@ -5,6 +5,7 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{
     error?: string | string[];
+    message?: string | string[];
     redirect?: string | string[];
     tab?: string | string[];
     fullName?: string | string[];
@@ -15,7 +16,14 @@ export default async function LoginPage({
 
   const toStr = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
-  const error = toStr(params.error);
+  const messageByCode: Record<string, string> = {
+    profile_missing: "Your account is missing a profile. Ask an administrator to run the auth profile restore SQL.",
+    profile_invalid: "Your account role is invalid. Please contact support.",
+    email_confirmation_failed: "Email confirmation failed. Please try again.",
+  };
+
+  const rawError = toStr(params.error) ?? toStr(params.message);
+  const error = rawError ? messageByCode[rawError] ?? rawError : undefined;
   const redirectTo = toStr(params.redirect);
   const tab = toStr(params.tab);
   const fullName = toStr(params.fullName);

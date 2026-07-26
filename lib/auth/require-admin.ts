@@ -1,10 +1,28 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth/current-user";
+import { getAuthenticatedUserAndProfile } from "@/lib/auth/access";
 
 export async function requireAdmin() {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "admin") {
+  const { user, profile } = await getAuthenticatedUserAndProfile();
+
+  if (!user) {
     return { user: null, response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
-  return { user, response: null as null };
+
+  if (!profile) {
+    return { user: null, response: NextResponse.json({ error: "Profile missing" }, { status: 401 }) };
+  }
+
+  if (profile.role !== "admin") {
+    return { user: null, response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
+  }
+
+  return {
+    user: {
+      id: user.id,
+      full_name: profile.full_name,
+      email: profile.email,
+      role: profile.role,
+    },
+    response: null as null,
+  };
 }

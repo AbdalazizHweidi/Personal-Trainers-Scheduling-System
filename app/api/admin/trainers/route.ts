@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createPrivilegedClient } from "@/lib/supabase/admin";
 
 export async function POST(req: Request) {
   const { response } = await requireAdmin();
   if (response) return response;
 
   const formData = await req.formData();
-  const supabase = createAdminClient();
+  const supabase = await createPrivilegedClient();
 
   const full_name = String(formData.get("full_name") ?? "");
   const bio = (formData.get("bio") as string) || null;
