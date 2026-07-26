@@ -6,49 +6,79 @@ import { redirect } from "next/navigation";
 export async function login(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
-  const redirectTo = (formData.get("redirect") as string) || "/dashboard";
+  const requestedRedirect = formData.get("redirect") as string | null;
 
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-  if (error) {
+  if (error || !data.user) {
     redirect(
-      `/login?error=${encodeURIComponent(error.message)}&redirect=${encodeURIComponent(redirectTo)}`
+      `/login?error=${encodeURIComponent(error?.message ?? "Invalid credentials")}&redirect=${encodeURIComponent(
+        requestedRedirect ?? "/dashboard"
+      )}&email=${encodeURIComponent(email)}`
     );
   }
 
-  redirect(redirectTo);
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", data.user!.id)
+    .single();
+
+  // Admins always land on the admin dashboard, regardless of a stale ?redirect= param
+  if (profile?.role === "admin") {
+    redirect("/admin");
+  }
+
+  redirect(requestedRedirect || "/dashboard");
 }
 
 export async function signup(formData: FormData) {
   const fullName = formData.get("fullName") as string;
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
-  const redirectTo = (formData.get("redirect") as string) || "/dashboard";
+  const confirmPassword = formData.get("confirmPassword") as string;
+
+  const preserved = `&tab=signup&fullName=${encodeURIComponent(fullName)}&email=${encodeURIComponent(email)}`;
+
+  if (password !== confirmPassword) {
+    redirect(`/login?error=${encodeURIComponent("Passwords don't match.")}${preserved}`);
+  }
 
   const supabase = await createClient();
 
-  const { data, error } = await supabase.auth.signUp({ email, password });
-
-  if (error || !data.user) {
-    redirect(
-      `/login?error=${encodeURIComponent(error?.message ?? "Could not create account")}&tab=signup`
-    );
-  }
-
-  const { error: profileError } = await supabase.from("profiles").insert({
-    id: data.user!.id,
-    full_name: fullName,
+  // Profile creation is handled by a DB trigger (handle_new_user) on auth.users insert —
+  // NOT done here, since RLS can reject a client-side insert before the session is live
+  // (e.g. when email confirmation is required and no session exists yet post-signup).
+  const { data, error } = await supabase.auth.signUp({
     email,
-    role: "client",
+    password,
+    options: {
+      data: { full_name: fullName },
+    },
   });
 
-  if (profileError) {
+  if (error) {
+    redirect(`/login?error=${encodeURIComponent(error.message)}${preserved}`);
+  }
+
+  if (!data.user) {
     redirect(
-      `/login?error=${encodeURIComponent("Account created, but profile setup failed. Contact support.")}&tab=signup`
+      `/login?error=${encodeURIComponent("Something went wrong creating your account. Please try again.")}${preserved}`
     );
   }
 
-  redirect(redirectTo);
+  // With email confirmation enabled, signUp() does not return an active session —
+  // send them to log in after confirming, rather than assuming they're authenticated.
+  if (!data.session) {
+    redirect(
+      `/login?tab=login&message=${encodeURIComponent(
+        "Check your email to confirm your account, then log in."
+      )}&email=${encodeURIComponent(email)}`
+    );
+  }
+
+  // Email confirmation is disabled on this project — session exists immediately.
+  redirect("/dashboard");
 }
