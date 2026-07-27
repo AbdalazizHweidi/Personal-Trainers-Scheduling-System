@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { markSlotBooked } from "@/lib/queries/bookings";
 
 export async function POST(req: Request) {
   const { response } = await requireAdmin();
@@ -29,7 +30,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "This slot is no longer open" }, { status: 409 });
   }
 
-  // Insert triggers sync_slot_status — marks the slot "booked" automatically.
   const { data: booking, error: insertError } = await supabase
     .from("bookings")
     .insert({
@@ -46,5 +46,8 @@ export async function POST(req: Request) {
     .single();
 
   if (insertError) return NextResponse.json({ error: insertError.message }, { status: 400 });
+
+  await markSlotBooked(supabase, slot_id);
+
   return NextResponse.json({ booking }, { status: 201 });
 }
