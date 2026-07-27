@@ -6,8 +6,8 @@ export async function POST(req: Request) {
   const { response } = await requireAdmin();
   if (response) return response;
 
-  const { booking_id, amount, cardholder_name } = await req.json();
-  if (!booking_id || !amount) {
+  const { booking_id, amount, method, cardholder_name } = await req.json();
+  if (!booking_id || !amount || !method) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
@@ -40,7 +40,8 @@ export async function POST(req: Request) {
   const { error: insertError } = await supabase.from("payments").insert({
     booking_id,
     amount,
-    cardholder_name: cardholder_name || null,
+    method,
+    cardholder_name: cardholder_name || null, // only meaningful for card_in_person
     status: "success",
     paid_at: new Date().toISOString(),
   });

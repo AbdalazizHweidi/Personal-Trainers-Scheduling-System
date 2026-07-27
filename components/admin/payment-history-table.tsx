@@ -26,7 +26,7 @@ export function PaymentHistoryTable({ rows }: { rows: PaymentHistoryRow[] }) {
                 <td className="px-5 py-3">{p.paidAt ? new Date(p.paidAt).toLocaleString() : "—"}</td>
                 <td className="px-5 py-3">{p.clientName}</td>
                 <td className="px-5 py-3">{p.trainerName}</td>
-                <td className="px-5 py-3">{p.cardholderName ?? "—"}</td>
+                <td className="px-5 py-3 capitalize">{p.method.replace(/_/g, " ")}</td>
                 <td className="px-5 py-3 font-mono">${p.amount}</td>
                 <td className="px-5 py-3">
                   <span className={`rounded-full px-2.5 py-0.5 font-mono text-[10px] uppercase ${

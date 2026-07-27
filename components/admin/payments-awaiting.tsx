@@ -20,6 +20,13 @@ export function PaymentsAwaiting({ rows }: { rows: AwaitingPaymentRow[] }) {
     setError(null);
   }
 
+  const METHOD_VALUES: Record<string, string> = {
+    "Cash": "cash",
+    "Card (in person)": "card_in_person",
+    "Bank transfer": "bank_transfer",
+  };
+
+
   async function submitPayment(bookingId: number) {
     setSubmitting(true);
     setError(null);
@@ -27,7 +34,11 @@ export function PaymentsAwaiting({ rows }: { rows: AwaitingPaymentRow[] }) {
       const res = await fetch("/api/admin/payments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ booking_id: bookingId, amount: Number(amount), cardholder_name: method }),
+        body: JSON.stringify({
+          booking_id: bookingId,
+          amount: Number(amount),
+          method: METHOD_VALUES[method] ?? "cash",
+        }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => null);

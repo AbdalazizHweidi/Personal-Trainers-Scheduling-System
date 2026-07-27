@@ -325,6 +325,7 @@ export async function getBookingsAwaitingPayment(supabase: SupabaseClient): Prom
 export type PaymentHistoryRow = {
   id: number;
   amount: number;
+  method: string;
   cardholderName: string | null;
   status: string;
   refunded: boolean;
@@ -336,7 +337,7 @@ export type PaymentHistoryRow = {
 export async function getPaymentHistory(supabase: SupabaseClient): Promise<PaymentHistoryRow[]> {
   const { data, error } = await supabase
     .from("payments")
-    .select("id, amount, cardholder_name, status, refunded, paid_at, bookings(profiles(full_name), trainers(full_name))")
+    .select("id, amount, method, cardholder_name, status, refunded, paid_at, bookings(profiles(full_name), trainers(full_name))")
     .is("deleted_at", null)
     .order("paid_at", { ascending: false });
 
@@ -345,6 +346,7 @@ export async function getPaymentHistory(supabase: SupabaseClient): Promise<Payme
   return (data ?? []).map((p: any) => ({
     id: p.id,
     amount: Number(p.amount),
+    method: p.method,
     cardholderName: p.cardholder_name,
     status: p.status,
     refunded: p.refunded,
