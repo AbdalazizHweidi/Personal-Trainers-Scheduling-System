@@ -11,6 +11,11 @@ type Slot = { id: number; time: string; status: "open" | "blocked" | "booked" };
 type Day = { date: string; dayLabel: string; slots: Slot[] };
 type Trainer = { id: number; full_name: string; specialties: string[] };
 
+function isSlotInPast(date: string, time: string): boolean {
+  const slotDateTime = new Date(`${date}T${time}`);
+  return slotDateTime.getTime() <= Date.now();
+}
+
 export function BookingFlow({
   trainer,
   services,
@@ -26,7 +31,7 @@ export function BookingFlow({
 
   const [selectedService, setSelectedService] = useState<Service | null>(services[0] ?? null);
   const [selectedDay, setSelectedDay] = useState<Day | null>(
-    availability.find((d) => d.slots.some((s) => s.status === "open")) ?? null
+    availability.find((d) => d.slots.some((s) => s.status === "open" && !isSlotInPast(d.date, s.time))) ?? null
   );
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
 
@@ -174,22 +179,27 @@ export function BookingFlow({
           </div>
 
           <div className="mt-5 grid grid-cols-4 gap-2">
-            {(selectedDay?.slots ?? []).map((slot) => (
-              <button
-                key={slot.id}
-                disabled={slot.status !== "open"}
-                onClick={() => setSelectedSlot(slot)}
-                className={`rounded-md border px-2 py-2.5 text-sm ${
-                  slot.status !== "open"
-                    ? "cursor-not-allowed border-border bg-muted text-muted-foreground/50"
-                    : selectedSlot?.id === slot.id
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-card text-card-foreground hover:border-muted-foreground"
-                }`}
-              >
-                {formatTime(slot.time)}
-              </button>
-            ))}
+            {(selectedDay?.slots ?? []).map((slot) => {
+              const isPast = isSlotInPast(selectedDay!.date, slot.time);
+              const disabled = slot.status !== "open" || isPast;
+
+              return (
+                <button
+                  key={slot.id}
+                  disabled={disabled}
+                  onClick={() => setSelectedSlot(slot)}
+                  className={`rounded-md border px-2 py-2.5 text-sm ${
+                    disabled
+                      ? "cursor-not-allowed border-border bg-muted text-muted-foreground/50"
+                      : selectedSlot?.id === slot.id
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-card text-card-foreground hover:border-muted-foreground"
+                  }`}
+                >
+                  {formatTime(slot.time)}
+                </button>
+              );
+            })}
             {selectedDay && selectedDay.slots.length === 0 && (
               <p className="col-span-4 text-sm text-muted-foreground">No slots this day.</p>
             )}

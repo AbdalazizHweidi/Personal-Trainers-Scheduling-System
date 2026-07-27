@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getBookingForOwner, cancelBookingWrite } from "@/lib/queries/bookings";
 import { isCancelled } from "@/lib/queries/client-data";
+import { sendBookingCancelledEmail } from "@/lib/email/send";
 import { revalidatePath } from "next/cache";
 
 function hoursUntil(sessionDate: string, startTime: string): number {
@@ -21,13 +22,14 @@ export async function cancelBooking(bookingId: number) {
   const booking = await getBookingForOwner(supabase, bookingId, user.id);
   if (!booking) return { success: false as const, error: "Booking not found." };
 
-  // Policy: no cancellation once the session has started
   const hoursLeft = hoursUntil(booking.session_date, booking.start_time);
   if (isCancelled(booking.status) || booking.status === "completed" || hoursLeft <= 0) {
-    return { success: false as const, error: "This session has already started or ended and can no longer be cancelled." };
+    return {
+      success: false as const,
+      error: "This session has already started or ended and can no longer be cancelled.",
+    };
   }
 
-  // Policy: free cancellation up to 24h before, no refund inside that window
   const refund = hoursLeft >= 24;
 
   const payment = Array.isArray(booking.payments) ? booking.payments[0] : booking.payments;
@@ -39,6 +41,28 @@ export async function cancelBooking(bookingId: number) {
       paymentId: payment?.id ?? null,
       refund,
     });
+
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .single();
+
+    const trainerName = (booking.trainers as any)?.full_name ?? "your trainer";
+    const serviceName = (booking.services as any)?.name ?? "your session";
+    const price = payment?.amount ?? 0;
+
+    if (user.email) {
+      await sendBookingCancelledEmail(user.email, {
+        clientName: profileRow?.full_name ?? "there",
+        trainerName,
+        serviceName,
+        sessionDate: booking.session_date,
+        startTime: booking.start_time,
+        refunded: refund,
+        price,
+      });
+    }
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/bookings");

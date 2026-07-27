@@ -8,6 +8,11 @@ import { rescheduleBooking } from "@/app/dashboard/bookings/[bookingId]/reschedu
 type Slot = { id: number; time: string; status: "open" | "blocked" | "booked" };
 type Day = { date: string; dayLabel: string; slots: Slot[] };
 
+function isSlotInPast(date: string, time: string): boolean {
+  const slotDateTime = new Date(`${date}T${time}`);
+  return slotDateTime.getTime() <= Date.now();
+}
+
 export function RescheduleFlow({
   bookingId,
   currentDate,
@@ -24,7 +29,7 @@ export function RescheduleFlow({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedDay, setSelectedDay] = useState<Day | null>(
-    availability.find((d) => d.slots.some((s) => s.status === "open")) ?? null
+    availability.find((d) => d.slots.some((s) => s.status === "open" && !isSlotInPast(d.date, s.time))) ?? null
   );
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -85,22 +90,27 @@ export function RescheduleFlow({
       </div>
 
       <div className="mt-5 grid grid-cols-4 gap-2">
-        {(selectedDay?.slots ?? []).map((slot) => (
-          <button
-            key={slot.id}
-            disabled={slot.status !== "open"}
-            onClick={() => setSelectedSlot(slot)}
-            className="rounded-md border px-2 py-2.5 text-sm"
-            style={{
-              cursor: slot.status !== "open" ? "not-allowed" : "pointer",
-              borderColor: "#d7dad2",
-              background: slot.status !== "open" ? "#e1e4dc" : selectedSlot?.id === slot.id ? "#ff5a1f" : "#fff",
-              color: slot.status !== "open" ? "#9aa0a6" : selectedSlot?.id === slot.id ? "#fff" : "#171b1f",
-            }}
-          >
-            {formatTime(slot.time)}
-          </button>
-        ))}
+        {(selectedDay?.slots ?? []).map((slot) => {
+          const isPast = isSlotInPast(selectedDay!.date, slot.time);
+          const disabled = slot.status !== "open" || isPast;
+
+          return (
+            <button
+              key={slot.id}
+              disabled={disabled}
+              onClick={() => setSelectedSlot(slot)}
+              className="rounded-md border px-2 py-2.5 text-sm"
+              style={{
+                cursor: disabled ? "not-allowed" : "pointer",
+                borderColor: "#d7dad2",
+                background: disabled ? "#e1e4dc" : selectedSlot?.id === slot.id ? "#ff5a1f" : "#fff",
+                color: disabled ? "#9aa0a6" : selectedSlot?.id === slot.id ? "#fff" : "#171b1f",
+              }}
+            >
+              {formatTime(slot.time)}
+            </button>
+          );
+        })}
         {selectedDay && selectedDay.slots.length === 0 && (
           <p className="col-span-4 text-sm" style={{ color: "#5b6670" }}>
             No slots this day.
