@@ -1,4 +1,5 @@
 import { AuthTabs } from "@/components/auth-tabs";
+import Link from "next/link";
 
 export default async function LoginPage({
   searchParams,
@@ -24,7 +25,14 @@ export default async function LoginPage({
   return (
     <div className="min-h-screen bg-background">
       <header className="flex items-center justify-between border-b border-border px-10 py-5">
-        <span className="font-display text-2xl tracking-wide text-foreground">FITCONNECT</span>
+                <Link href="/" className="flex items-center gap-2">
+          <div className="flex h-6 items-end gap-[3px]">
+            <span className="h-3 w-1.5 bg-primary" />
+            <span className="h-5 w-1.5 bg-foreground" />
+            <span className="h-4 w-1.5 bg-primary" />
+          </div>
+          <span className="font-display text-xl tracking-wide text-foreground">FITCONNECT</span>
+        </Link>
       </header>
 
       <div className="mx-auto grid min-h-[560px] max-w-5xl grid-cols-1 md:grid-cols-2">
