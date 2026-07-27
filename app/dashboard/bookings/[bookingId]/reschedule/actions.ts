@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getBookingForOwner, rescheduleBookingWrite } from "@/lib/queries/bookings";
 import { isCancelled } from "@/lib/queries/client-data";
+import { sendBookingRescheduledEmail } from "@/lib/email/send";
 import { revalidatePath } from "next/cache";
 
 export async function rescheduleBooking(params: {
@@ -22,18 +23,27 @@ export async function rescheduleBooking(params: {
   const booking = await getBookingForOwner(supabase, params.bookingId, user.id);
   if (!booking) return { success: false as const, error: "Booking not found." };
 
-  const hoursLeft = (new Date(`${booking.session_date}T${booking.start_time}`).getTime() - Date.now()) / (1000 * 60 * 60);
+  const hoursLeft =
+    (new Date(`${booking.session_date}T${booking.start_time}`).getTime() - Date.now()) / (1000 * 60 * 60);
 
   if (isCancelled(booking.status) || booking.status === "completed" || hoursLeft <= 0) {
-    return { success: false as const, error: "This session has already started or ended and can no longer be rescheduled." };
+    return {
+      success: false as const,
+      error: "This session has already started or ended and can no longer be rescheduled.",
+    };
   }
 
-  // Policy: each booking may be rescheduled only once
   if ((booking.reschedule_count ?? 0) >= 1) {
     return {
       success: false as const,
       error: "This booking has already been rescheduled once. Cancel and create a new booking for further changes.",
     };
+  }
+
+  // Prevent rescheduling to a slot that's in the past
+  const newDateTime = new Date(`${params.newDate}T${params.newStartTime}`);
+  if (newDateTime.getTime() <= Date.now()) {
+    return { success: false as const, error: "That time slot is in the past. Please pick another." };
   }
 
   const [h, m] = params.newStartTime.split(":");
@@ -49,6 +59,27 @@ export async function rescheduleBooking(params: {
       newStartTime: params.newStartTime,
       newEndTime,
     });
+
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .single();
+
+    const trainerName = (booking.trainers as any)?.full_name ?? "your trainer";
+    const serviceName = (booking.services as any)?.name ?? "your session";
+
+    if (user.email) {
+      await sendBookingRescheduledEmail(user.email, {
+        clientName: profileRow?.full_name ?? "there",
+        trainerName,
+        serviceName,
+        sessionDate: params.newDate,
+        startTime: params.newStartTime,
+        oldDate: booking.session_date,
+        oldTime: booking.start_time,
+      });
+    }
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/bookings");

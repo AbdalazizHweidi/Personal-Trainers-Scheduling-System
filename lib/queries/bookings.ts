@@ -61,7 +61,8 @@ export async function getBookingForOwner(supabase: SupabaseClient, bookingId: nu
     .from("bookings")
     .select(
       `id, trainer_id, service_id, slot_id, session_date, start_time, end_time, status, reschedule_count, client_id,
-       services ( duration_minutes ),
+       trainers ( full_name ),
+       services ( name, price, duration_minutes ),
        payments ( id, amount, refunded )`
     )
     .eq("id", bookingId)

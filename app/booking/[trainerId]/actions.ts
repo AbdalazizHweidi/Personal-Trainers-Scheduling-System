@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createBooking, createPayment, markSlotBooked } from "@/lib/queries/bookings";
 import { luhnCheck, isExpiryValid } from "@/lib/luhn";
+import { sendBookingConfirmedEmail } from "@/lib/email/send";
 import { revalidatePath } from "next/cache";
 
 type SubmitBookingInput = {
@@ -19,13 +20,18 @@ type SubmitBookingInput = {
 };
 
 export async function submitBooking(input: SubmitBookingInput) {
-  // Server-side re-validation — never trust the client's checks alone
   if (!luhnCheck(input.cardNumber)) {
     return { success: false as const, error: "Invalid card number." };
   }
 
   if (!isExpiryValid(input.expiry)) {
     return { success: false as const, error: "Card has expired or the expiry date is invalid." };
+  }
+
+  // Prevent booking a slot that's already in the past
+  const sessionDateTime = new Date(`${input.sessionDate}T${input.startTime}`);
+  if (sessionDateTime.getTime() <= Date.now()) {
+    return { success: false as const, error: "That time slot is in the past. Please pick another." };
   }
 
   const supabase = await createClient();
@@ -59,6 +65,23 @@ export async function submitBooking(input: SubmitBookingInput) {
 
     if (input.slotId) {
       await markSlotBooked(supabase, input.slotId);
+    }
+
+    // Fetch names for the confirmation email + client's profile
+    const [{ data: trainerRow }, { data: serviceRow }, { data: profileRow }] = await Promise.all([
+      supabase.from("trainers").select("full_name").eq("id", input.trainerId).single(),
+      supabase.from("services").select("name").eq("id", input.serviceId).single(),
+      supabase.from("profiles").select("full_name").eq("id", user.id).single(),
+    ]);
+
+    if (user.email) {
+      await sendBookingConfirmedEmail(user.email, {
+        clientName: profileRow?.full_name ?? "there",
+        trainerName: trainerRow?.full_name ?? "your trainer",
+        serviceName: serviceRow?.name ?? "your session",
+        sessionDate: input.sessionDate,
+        startTime: input.startTime,
+      });
     }
 
     revalidatePath(`/trainers/${input.trainerId}`);
