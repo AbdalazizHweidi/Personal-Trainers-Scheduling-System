@@ -4,12 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatTime } from "@/lib/utils";
 import { AdminBookingRow } from "@/lib/queries/admin";
+import { BookingOutcomeActions } from "@/components/admin/booking-outcome-actions";
 
 const STATUS_STYLE: Record<string, string> = {
   confirmed: "bg-success/15 text-success",
   pending: "bg-muted text-muted-foreground",
   completed: "bg-secondary text-secondary-foreground",
   cancelled: "bg-destructive/15 text-destructive",
+  cancelled_by_client: "bg-destructive/15 text-destructive",
+  cancelled_by_trainer: "bg-destructive/15 text-destructive",
+  no_show: "bg-destructive/15 text-destructive",
 };
 
 export function BookingsTableAdmin({ rows }: { rows: AdminBookingRow[] }) {
@@ -18,17 +22,23 @@ export function BookingsTableAdmin({ rows }: { rows: AdminBookingRow[] }) {
 
   async function cancelBooking(id: number) {
     if (!confirm("Cancel this booking? This also frees up the slot.")) return;
+
+    const refund = confirm("Refund the client? Click OK to refund, Cancel to skip the refund.");
+
     setPendingId(id);
     try {
-      const res = await fetch(`/api/admin/bookings/${id}`, {
-        method: "PATCH",
+      const res = await fetch(`/api/admin/bookings/${id}/cancel`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "cancelled" }),
+        body: JSON.stringify({ refund }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error ?? `Request failed (${res.status})`);
+      }
       router.refresh();
-    } catch {
-      alert("Couldn't cancel booking. Try again.");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Couldn't cancel booking. Try again.");
     } finally {
       setPendingId(null);
     }
@@ -67,7 +77,7 @@ export function BookingsTableAdmin({ rows }: { rows: AdminBookingRow[] }) {
                   </span>
                 </td>
                 <td className="px-5 py-3 text-right">
-                  {r.status !== "cancelled" && r.status !== "completed" && (
+                  {["pending", "confirmed"].includes(r.status) && (
                     <button
                       disabled={pendingId === r.id}
                       onClick={() => cancelBooking(r.id)}
@@ -76,6 +86,12 @@ export function BookingsTableAdmin({ rows }: { rows: AdminBookingRow[] }) {
                       {pendingId === r.id ? "Cancelling…" : "Cancel"}
                     </button>
                   )}
+                  <BookingOutcomeActions
+                    bookingId={r.id}
+                    sessionDate={r.date}
+                    startTime={r.time}
+                    status={r.status}
+                  />
                 </td>
               </tr>
             ))

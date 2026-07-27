@@ -16,7 +16,13 @@ export async function getAdminStats(supabase: SupabaseClient): Promise<AdminStat
 
   const [{ data: todaySlots }, { data: payments }, { data: newClients }] = await Promise.all([
     supabase.from("availability_slots").select("status").eq("slot_date", today).is("deleted_at", null),
-    supabase.from("payments").select("amount").eq("status", "success").gte("paid_at", weekAgoStr).is("deleted_at", null),
+    supabase
+      .from("payments")
+      .select("amount")
+      .eq("status", "success")
+      .eq("refunded", false) // ← added: refunded payments no longer count as revenue
+      .gte("paid_at", weekAgoStr)
+      .is("deleted_at", null),
     supabase.from("profiles").select("id").eq("role", "client").gte("created_at", weekAgoStr),
   ]);
 
@@ -35,6 +41,7 @@ export async function getAdminStats(supabase: SupabaseClient): Promise<AdminStat
 
 export type TodayBookingRow = {
   id: number;
+  date: string;
   time: string;
   clientName: string;
   trainerName: string;
@@ -56,6 +63,7 @@ export async function getTodaysBookings(supabase: SupabaseClient): Promise<Today
 
   return (data ?? []).map((b: any) => ({
     id: b.id,
+    date: today, // ← add
     time: b.start_time,
     clientName: b.profiles?.full_name ?? "Unknown client",
     trainerName: b.trainers?.full_name ?? "Unknown trainer",
@@ -127,7 +135,13 @@ export async function getAllBookings(
     .order("session_date", { ascending: false })
     .order("start_time", { ascending: true });
 
-  if (filters.status) query = query.eq("status", filters.status);
+  if (filters.status === "cancelled") {
+    // "Cancelled" as a filter groups every cancellation reason together.
+    query = query.in("status", ["cancelled", "cancelled_by_client", "cancelled_by_trainer"]);
+  } else if (filters.status) {
+    query = query.eq("status", filters.status);
+  }
+
   if (filters.date) query = query.eq("session_date", filters.date);
 
   const { data, error } = await query;
@@ -245,4 +259,99 @@ export async function getServicesByTrainerAdmin(
 
   if (error) throw error;
   return data;
+}
+
+export type OpenSlot = { id: number; date: string; time: string; endTime: string };
+
+export async function getOpenSlotsForTrainer(supabase: SupabaseClient, trainerId: number): Promise<OpenSlot[]> {
+  const today = new Date().toISOString().slice(0, 10);
+  const { data, error } = await supabase
+    .from("availability_slots")
+    .select("id, slot_date, start_time, end_time")
+    .eq("trainer_id", trainerId)
+    .eq("status", "open")
+    .gte("slot_date", today)
+    .is("deleted_at", null)
+    .order("slot_date", { ascending: true })
+    .order("start_time", { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []).map((s) => ({ id: s.id, date: s.slot_date, time: s.start_time, endTime: s.end_time }));
+}
+
+export type AwaitingPaymentRow = {
+  id: number;
+  date: string;
+  time: string;
+  clientName: string;
+  trainerName: string;
+  serviceName: string;
+  amount: number;
+};
+
+export async function getBookingsAwaitingPayment(supabase: SupabaseClient): Promise<AwaitingPaymentRow[]> {
+  const { data: bookings, error } = await supabase
+    .from("bookings")
+    .select("id, session_date, start_time, profiles(full_name), trainers(full_name), services(name, price)")
+    .eq("status", "pending")
+    .is("deleted_at", null)
+    .order("session_date", { ascending: true });
+
+  if (error) throw error;
+  if (!bookings || bookings.length === 0) return [];
+
+  const { data: payments, error: payError } = await supabase
+    .from("payments")
+    .select("booking_id")
+    .in("booking_id", bookings.map((b) => b.id))
+    .is("deleted_at", null);
+
+  if (payError) throw payError;
+  const paidIds = new Set((payments ?? []).map((p) => p.booking_id));
+
+  return bookings
+    .filter((b: any) => !paidIds.has(b.id))
+    .map((b: any) => ({
+      id: b.id,
+      date: b.session_date,
+      time: b.start_time,
+      clientName: b.profiles?.full_name ?? "Unknown client",
+      trainerName: b.trainers?.full_name ?? "Unknown trainer",
+      serviceName: b.services?.name ?? "—",
+      amount: Number(b.services?.price ?? 0),
+    }));
+}
+
+export type PaymentHistoryRow = {
+  id: number;
+  amount: number;
+  method: string;
+  cardholderName: string | null;
+  status: string;
+  refunded: boolean;
+  paidAt: string | null;
+  clientName: string;
+  trainerName: string;
+};
+
+export async function getPaymentHistory(supabase: SupabaseClient): Promise<PaymentHistoryRow[]> {
+  const { data, error } = await supabase
+    .from("payments")
+    .select("id, amount, method, cardholder_name, status, refunded, paid_at, bookings(profiles(full_name), trainers(full_name))")
+    .is("deleted_at", null)
+    .order("paid_at", { ascending: false });
+
+  if (error) throw error;
+
+  return (data ?? []).map((p: any) => ({
+    id: p.id,
+    amount: Number(p.amount),
+    method: p.method,
+    cardholderName: p.cardholder_name,
+    status: p.status,
+    refunded: p.refunded,
+    paidAt: p.paid_at,
+    clientName: p.bookings?.profiles?.full_name ?? "Unknown client",
+    trainerName: p.bookings?.trainers?.full_name ?? "Unknown trainer",
+  }));
 }
