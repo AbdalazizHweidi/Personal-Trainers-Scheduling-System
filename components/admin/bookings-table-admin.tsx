@@ -69,7 +69,7 @@ export function BookingsTableAdmin({ rows }: { rows: AdminBookingRow[] }) {
               <tr key={r.id} className="border-b border-border last:border-none">
                 <td className="px-5 py-3">{r.date}</td>
                 <td className="px-5 py-3">{formatTime(r.time)}</td>
-                <td className="px-5 py-3">{r.endTime}</td>
+                <td className="px-5 py-3">{formatTime(r.endTime)}</td>
                 <td className="px-5 py-3">{r.clientName}</td>
                 <td className="px-5 py-3">{r.trainerName}</td>
                 <td className="px-5 py-3">{r.serviceName}</td>
