@@ -10,6 +10,7 @@ export type ClientBooking = {
   id: number;
   trainerId: number;
   trainerName: string;
+  trainerPhotoUrl: string | null;
   serviceName: string;
   durationMinutes: number;
   price: number;
@@ -29,7 +30,7 @@ export async function getAllBookingsForClient(
     .from("bookings")
     .select(
       `id, trainer_id, session_date, start_time, end_time, status, slot_id, reschedule_count,
-       trainers ( full_name ),
+       trainers ( full_name, photo_url ),
        services ( name, price, duration_minutes )`
     )
     .eq("client_id", clientId)
@@ -42,6 +43,7 @@ export async function getAllBookingsForClient(
     id: b.id,
     trainerId: b.trainer_id,
     trainerName: b.trainers?.full_name ?? "Unknown trainer",
+    trainerPhotoUrl: b.trainers?.photo_url ?? null,
     serviceName: b.services?.name ?? "Session",
     durationMinutes: b.services?.duration_minutes ?? 60,
     price: Number(b.services?.price ?? 0),

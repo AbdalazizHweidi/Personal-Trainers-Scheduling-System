@@ -166,8 +166,7 @@ function NextSessionCard({ session }: { session: ClientBooking }) {
     .map((w) => w[0]?.toUpperCase())
     .join("");
 
-  // Falls back to initials if trainerPhotoUrl is missing/null.
-  const photoUrl = (session as ClientBooking & { trainerPhotoUrl?: string | null }).trainerPhotoUrl;
+  const photoUrl = session.trainerPhotoUrl;
 
   return (
     <div
@@ -186,24 +185,12 @@ function NextSessionCard({ session }: { session: ClientBooking }) {
       <div className="relative flex items-center justify-between gap-6">
         <div className="flex items-center gap-4">
           {photoUrl ? (
-            <div className="relative h-[54px] w-[54px] shrink-0 overflow-hidden rounded-full">
-              <Image
-                src={photoUrl}
-                alt={session.trainerName}
-                fill
-                sizes="54px"
-                className="object-cover"
-              />
-            </div>
+            <img src={photoUrl} alt={session.trainerName} className="h-15 w-15 rounded-full object-cover" />
           ) : (
-            <div
-              className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full text-[17px] font-semibold"
-              style={{ background: "#ff5a1f", fontFamily: "var(--font-display)" }}
-            >
+            <div className="flex h-15 w-15 items-center justify-center rounded-full bg-primary font-display text-sm text-primary-foreground">
               {initials}
             </div>
           )}
-
           <div>
             <div
               className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-[3px] text-[11px] font-semibold uppercase tracking-[0.06em]"
