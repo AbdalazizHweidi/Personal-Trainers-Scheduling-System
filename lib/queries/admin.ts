@@ -72,13 +72,13 @@ export async function getTodaysBookings(supabase: SupabaseClient): Promise<Today
   }));
 }
 
-export type RosterItem = { id: number; fullName: string; sessionsToday: number };
+export type RosterItem = { id: number; fullName: string; sessionsToday: number; photoUrl: string | null };
 
 export async function getTrainerRoster(supabase: SupabaseClient): Promise<RosterItem[]> {
   const today = new Date().toISOString().slice(0, 10);
 
   const [{ data: trainers }, { data: bookings }] = await Promise.all([
-    supabase.from("trainers").select("id, full_name").eq("is_active", true).is("deleted_at", null),
+    supabase.from("trainers").select("id, full_name, photo_url").eq("is_active", true).is("deleted_at", null),
     supabase.from("bookings").select("trainer_id").eq("session_date", today).is("deleted_at", null),
   ]);
 
@@ -89,6 +89,7 @@ export async function getTrainerRoster(supabase: SupabaseClient): Promise<Roster
     id: t.id,
     fullName: t.full_name,
     sessionsToday: countByTrainer.get(t.id) ?? 0,
+    photoUrl: t.photo_url,
   }));
 }
 
