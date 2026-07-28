@@ -1,4 +1,4 @@
-
+import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardData } from "@/lib/queries/dashboard";
@@ -12,8 +12,33 @@ const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   completed: { bg: "#e1e4dc", color: "#5b6670" },
   cancelled: { bg: "#ffe6da", color: "#d94714" },
   cancelled_by_client: { bg: "#ffe6da", color: "#d94714" },
-  no_show: { bg: "#ffe6da", color: "#d94714" },
 };
+
+// Statuses that should never be treated as "upcoming", even if the
+// session date happens to be in the future (e.g. cancelled early).
+const NON_UPCOMING_STATUSES = new Set([
+  "completed",
+  "cancelled",
+  "cancelled_by_client",
+  "cancelled_by_trainer",
+  "no_show",
+]);
+
+function isUpcomingBooking(booking: ClientBooking) {
+  if (NON_UPCOMING_STATUSES.has(booking.status)) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const sessionDateTime = new Date(`${booking.sessionDate}T${booking.startTime}`);
+  // Fall back to date-only comparison if startTime parsing fails for any reason.
+  if (isNaN(sessionDateTime.getTime())) {
+    const sessionDate = new Date(`${booking.sessionDate}T00:00:00`);
+    return sessionDate.getTime() >= today.getTime();
+  }
+
+  return sessionDateTime.getTime() >= today.getTime();
+}
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -30,6 +55,14 @@ export default async function DashboardPage() {
     .single();
 
   const data = await getDashboardData(supabase, user.id, profile?.full_name ?? "there");
+
+  const upcomingBookings = data.bookings
+    .filter(isUpcomingBooking)
+    .sort(
+      (a, b) =>
+        new Date(`${a.sessionDate}T${a.startTime}`).getTime() -
+        new Date(`${b.sessionDate}T${b.startTime}`).getTime()
+    );
 
   return (
     <>
@@ -52,24 +85,7 @@ export default async function DashboardPage() {
       </div>
 
       {data.nextSession ? (
-        <div
-          className="mb-7 flex items-center justify-between rounded-md p-[22px] text-white"
-          style={{ background: "#171b1f" }}
-        >
-          <div>
-            <div className="text-xs" style={{ fontFamily: "var(--font-mono)", color: "#ff8f5c" }}>
-              {formatRelativeDay(data.nextSession.sessionDate)}
-            </div>
-            <h3 className="mt-1.5 text-[17px] font-semibold" style={{ fontFamily: "var(--font-body)" }}>
-              {data.nextSession.serviceName} · with {data.nextSession.trainerName}
-            </h3>
-          </div>
-          <div className="text-right">
-            <div className="text-[15px]" style={{ fontFamily: "var(--font-mono)" }}>
-              {formatDisplayDate(data.nextSession.sessionDate)} · {formatTime(data.nextSession.startTime)}
-            </div>
-          </div>
-        </div>
+        <NextSessionCard session={data.nextSession} />
       ) : (
         <div
           className="mb-7 rounded-md border border-dashed p-6 text-center text-sm"
@@ -102,13 +118,13 @@ export default async function DashboardPage() {
           style={{ borderBottom: "1px solid #d7dad2" }}
         >
           <h3 className="text-[15px] font-semibold" style={{ fontFamily: "var(--font-body)" }}>
-            Upcoming & past bookings
+            Upcoming bookings
           </h3>
           <span
             className="inline-block rounded-[2px] px-2.5 py-1 text-[11px] uppercase tracking-[0.06em]"
             style={{ fontFamily: "var(--font-mono)", background: "#e1e4dc", color: "#5b6670" }}
           >
-            {data.bookings.length} total
+            {upcomingBookings.length} total
           </span>
         </div>
         <table className="w-full border-collapse">
@@ -126,15 +142,15 @@ export default async function DashboardPage() {
             </tr>
           </thead>
           <tbody>
-            {data.bookings.length === 0 && (
+            {upcomingBookings.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-[14px] py-6 text-center text-sm" style={{ color: "#5b6670" }}>
-                  No bookings yet.
+                  No upcoming bookings.
                 </td>
               </tr>
             )}
-            {data.bookings.map((b, i) => (
-              <BookingTableRow key={b.id} booking={b} isLast={i === data.bookings.length - 1} />
+            {upcomingBookings.map((b, i) => (
+              <BookingTableRow key={b.id} booking={b} isLast={i === upcomingBookings.length - 1} />
             ))}
           </tbody>
         </table>
@@ -143,8 +159,98 @@ export default async function DashboardPage() {
   );
 }
 
+function NextSessionCard({ session }: { session: ClientBooking }) {
+  const initials = session.trainerName
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join("");
+
+  // Falls back to initials if trainerPhotoUrl is missing/null.
+  const photoUrl = (session as ClientBooking & { trainerPhotoUrl?: string | null }).trainerPhotoUrl;
+
+  return (
+    <div
+      className="relative mb-7 overflow-hidden rounded-lg p-[26px] text-white"
+      style={{ background: "linear-gradient(135deg, #171b1f 0%, #2b3138 100%)" }}
+    >
+      {/* accent bar */}
+      <div className="absolute left-0 top-0 h-full w-[5px]" style={{ background: "#ff5a1f" }} />
+
+      {/* decorative glow */}
+      <div
+        className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full"
+        style={{ background: "radial-gradient(circle, rgba(255,90,31,0.18) 0%, transparent 70%)" }}
+      />
+
+      <div className="relative flex items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          {photoUrl ? (
+            <div className="relative h-[54px] w-[54px] shrink-0 overflow-hidden rounded-full">
+              <Image
+                src={photoUrl}
+                alt={session.trainerName}
+                fill
+                sizes="54px"
+                className="object-cover"
+              />
+            </div>
+          ) : (
+            <div
+              className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full text-[17px] font-semibold"
+              style={{ background: "#ff5a1f", fontFamily: "var(--font-display)" }}
+            >
+              {initials}
+            </div>
+          )}
+
+          <div>
+            <div
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-[3px] text-[11px] font-semibold uppercase tracking-[0.06em]"
+              style={{ background: "rgba(255,90,31,0.18)", color: "#ff8f5c", fontFamily: "var(--font-mono)" }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: "#ff8f5c" }} />
+              {formatRelativeDay(session.sessionDate)}
+            </div>
+            <h3
+              className="mt-2 text-[19px] font-semibold leading-tight"
+              style={{ fontFamily: "var(--font-body)" }}
+            >
+              {session.serviceName}
+            </h3>
+            <p className="mt-0.5 text-[13px]" style={{ color: "#9aa0a6" }}>
+              with {session.trainerName}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex shrink-0 flex-col items-end gap-3">
+          <div className="text-right">
+            <div
+              className="text-[19px] font-semibold"
+              style={{ fontFamily: "var(--font-mono)" }}
+            >
+              {formatTime(session.startTime)}
+            </div>
+            <div className="text-[12px]" style={{ color: "#9aa0a6" }}>
+              {formatDisplayDate(session.sessionDate)}
+            </div>
+          </div>
+          <Link
+            href="/dashboard/bookings"
+            className="rounded-[3px] border px-4 py-2 text-[12px] font-semibold transition-colors hover:bg-white/10"
+            style={{ borderColor: "rgba(255,255,255,0.2)" }}
+          >
+            View details
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function BookingTableRow({ booking, isLast }: { booking: ClientBooking; isLast: boolean }) {
-  const pill = STATUS_STYLES[booking.status];
+  const pill = STATUS_STYLES[booking.status] ?? { bg: "#e1e4dc", color: "#5b6670" };
   const border = isLast ? "none" : "1px solid #d7dad2";
 
   return (
@@ -167,20 +273,14 @@ function BookingTableRow({ booking, isLast }: { booking: ClientBooking; isLast: 
         </span>
       </td>
       <td className="px-[14px] py-[13px] text-right" style={{ borderBottom: border }}>
-        {booking.status === "completed" ? (
-          <Link href="/trainers" className="text-xs font-medium" style={{ color: "#5b6670" }}>
-            Rebook
-          </Link>
-        ) : (
-          <BookingActions
-            bookingId={booking.id}
-            status={booking.status}
-            sessionDate={booking.sessionDate}
-            startTime={booking.startTime}
-            rescheduleCount={booking.rescheduleCount}
-            price={booking.price}
-          />
-        )}
+        <BookingActions
+          bookingId={booking.id}
+          status={booking.status}
+          sessionDate={booking.sessionDate}
+          startTime={booking.startTime}
+          rescheduleCount={booking.rescheduleCount}
+          price={booking.price}
+        />
       </td>
     </tr>
   );
@@ -215,9 +315,8 @@ function formatRelativeDay(dateStr: string) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const diffDays = Math.round((target.getTime() - today.getTime()) / 86400000);
-  if (diffDays === 0) return "NEXT SESSION · TODAY";
-  if (diffDays === 1) return "NEXT SESSION · TOMORROW";
-  if (diffDays > 1) return `NEXT SESSION · IN ${diffDays} DAYS`;
-  return `NEXT SESSION · ${formatDisplayDate(dateStr).toUpperCase()}`;
-
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Tomorrow";
+  if (diffDays > 1) return `In ${diffDays} days`;
+  return formatDisplayDate(dateStr);
 }
