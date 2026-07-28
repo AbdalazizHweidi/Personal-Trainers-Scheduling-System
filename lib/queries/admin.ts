@@ -72,13 +72,13 @@ export async function getTodaysBookings(supabase: SupabaseClient): Promise<Today
   }));
 }
 
-export type RosterItem = { id: number; fullName: string; sessionsToday: number };
+export type RosterItem = { id: number; fullName: string; sessionsToday: number; photoUrl: string | null };
 
 export async function getTrainerRoster(supabase: SupabaseClient): Promise<RosterItem[]> {
   const today = new Date().toISOString().slice(0, 10);
 
   const [{ data: trainers }, { data: bookings }] = await Promise.all([
-    supabase.from("trainers").select("id, full_name").eq("is_active", true).is("deleted_at", null),
+    supabase.from("trainers").select("id, full_name, photo_url").eq("is_active", true).is("deleted_at", null),
     supabase.from("bookings").select("trainer_id").eq("session_date", today).is("deleted_at", null),
   ]);
 
@@ -89,6 +89,7 @@ export async function getTrainerRoster(supabase: SupabaseClient): Promise<Roster
     id: t.id,
     fullName: t.full_name,
     sessionsToday: countByTrainer.get(t.id) ?? 0,
+    photoUrl: t.photo_url,
   }));
 }
 
@@ -118,6 +119,7 @@ export type AdminBookingRow = {
   id: number;
   date: string;
   time: string;
+  endTime: string;
   clientName: string;
   trainerName: string;
   serviceName: string;
@@ -130,7 +132,7 @@ export async function getAllBookings(
 ): Promise<AdminBookingRow[]> {
   let query = supabase
     .from("bookings")
-    .select("id, session_date, start_time, status, profiles(full_name), trainers(full_name), services(name)")
+    .select("id, session_date, start_time, end_time, status, profiles(full_name), trainers(full_name), services(name)")
     .is("deleted_at", null)
     .order("session_date", { ascending: false })
     .order("start_time", { ascending: true });
@@ -151,6 +153,7 @@ export async function getAllBookings(
     id: b.id,
     date: b.session_date,
     time: b.start_time,
+    endTime: b.end_time,
     clientName: b.profiles?.full_name ?? "Unknown client",
     trainerName: b.trainers?.full_name ?? "Unknown trainer",
     serviceName: b.services?.name ?? "—",

@@ -8,6 +8,15 @@ export function AvailabilityForm({ trainers }: { trainers: AdminTrainer[] }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [date, setDate] = useState("");
+  const today = new Date().toISOString().split("T")[0];
+  const weekday =
+    date
+        ? new Date(date).toLocaleDateString("en-US", {
+              weekday: "long",
+          })
+        : "";
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -15,7 +24,22 @@ export function AvailabilityForm({ trainers }: { trainers: AdminTrainer[] }) {
     setError(null);
 
     const formData = new FormData(e.currentTarget);
+    
+    const start = formData.get("start_time") as string;
+    const end = formData.get("end_time") as string;
 
+    if (start >= end) {
+      setLoading(false);
+      setError("End time must be later than the start time.");
+      return;
+    }
+    const selected = formData.get("slot_date") as string;
+
+    if (selected < today) {
+        setError("Cannot create availability in the past.");
+        setLoading(false);
+        return;
+    }
     try {
       const res = await fetch("/api/admin/availability", {
         method: "POST",
@@ -25,6 +49,7 @@ export function AvailabilityForm({ trainers }: { trainers: AdminTrainer[] }) {
           slot_date: formData.get("slot_date"),
           start_time: formData.get("start_time"),
           end_time: formData.get("end_time"),
+          is_recurring: isRecurring,
         }),
       });
 
@@ -34,6 +59,8 @@ export function AvailabilityForm({ trainers }: { trainers: AdminTrainer[] }) {
       }
 
       (e.target as HTMLFormElement).reset();
+      setDate("");
+      setIsRecurring(false);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't add slot.");
@@ -54,7 +81,12 @@ export function AvailabilityForm({ trainers }: { trainers: AdminTrainer[] }) {
       </div>
       <div>
         <label className="mb-1.5 block text-xs font-semibold text-foreground">Date</label>
-        <input type="date" name="slot_date" required className="w-full rounded-md border border-input bg-card px-3 py-2.5 text-sm text-foreground" />
+        <input type="date" name="slot_date" min={today} value={date} onChange={(e) => setDate(e.target.value)} required className="w-full rounded-md border border-input bg-card px-3 py-2.5 text-sm text-foreground" />
+        {weekday && (
+            <p className="mt-1 text-xs text-muted-foreground">
+                {weekday}
+            </p>
+        )}
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -66,6 +98,15 @@ export function AvailabilityForm({ trainers }: { trainers: AdminTrainer[] }) {
           <input type="time" name="end_time" required className="w-full rounded-md border border-input bg-card px-3 py-2.5 text-sm text-foreground" />
         </div>
       </div>
+      <label className="flex items-center gap-2 text-sm">
+          <input
+          type="checkbox"
+          name="is_recurring"
+          checked={isRecurring}
+          onChange={(e) => setIsRecurring(e.target.checked)}
+          />
+          Repeat weekly
+      </label>
       {error && <p className="text-sm text-destructive">{error}</p>}
       <button
         type="submit"
