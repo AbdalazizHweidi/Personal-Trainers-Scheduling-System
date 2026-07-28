@@ -1,4 +1,3 @@
-
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getAllBookingsForClient, type ClientBooking } from "@/lib/queries/client-data";
@@ -11,7 +10,12 @@ const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   completed: { bg: "#e1e4dc", color: "#5b6670" },
   cancelled: { bg: "#ffe6da", color: "#d94714" },
   cancelled_by_client: { bg: "#ffe6da", color: "#d94714" },
+  cancelled_by_trainer: { bg: "#ffe6da", color: "#d94714" },
+  no_show: { bg: "#f0e0e0", color: "#a34848" },
+  rescheduled: { bg: "#e6ecf7", color: "#3f5f9e" },
 };
+
+const DEFAULT_PILL = { bg: "#e1e4dc", color: "#5b6670" };
 
 export default async function BookingsPage() {
   const supabase = await createClient();
@@ -65,7 +69,7 @@ export default async function BookingsPage() {
 }
 
 function BookingRow({ booking, isLast }: { booking: ClientBooking; isLast: boolean }) {
-  const pill = STATUS_STYLES[booking.status];
+  const pill = STATUS_STYLES[booking.status] ?? DEFAULT_PILL;
   const border = isLast ? "none" : "1px solid #d7dad2";
 
   return (
