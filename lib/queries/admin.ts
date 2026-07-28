@@ -119,6 +119,7 @@ export type AdminBookingRow = {
   id: number;
   date: string;
   time: string;
+  endTime: string;
   clientName: string;
   trainerName: string;
   serviceName: string;
@@ -131,7 +132,7 @@ export async function getAllBookings(
 ): Promise<AdminBookingRow[]> {
   let query = supabase
     .from("bookings")
-    .select("id, session_date, start_time, status, profiles(full_name), trainers(full_name), services(name)")
+    .select("id, session_date, start_time, end_time, status, profiles(full_name), trainers(full_name), services(name)")
     .is("deleted_at", null)
     .order("session_date", { ascending: false })
     .order("start_time", { ascending: true });
@@ -152,6 +153,7 @@ export async function getAllBookings(
     id: b.id,
     date: b.session_date,
     time: b.start_time,
+    endTime: b.end_time,
     clientName: b.profiles?.full_name ?? "Unknown client",
     trainerName: b.trainers?.full_name ?? "Unknown trainer",
     serviceName: b.services?.name ?? "—",
