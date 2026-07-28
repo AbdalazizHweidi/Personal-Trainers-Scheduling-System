@@ -30,9 +30,8 @@ export default async function TrainersPage({
       <div className="border-b border-border">
         <div className="mx-auto w-full max-w-6xl px-6 py-12 md:px-10">
           <h1 className="font-display text-5xl text-foreground">Our Trainers</h1>
-          <p className="mt-3 max-w-xl text-sm text-muted-foreground">
-            Four coaches, four specialties. Every profile shows real weekly
-            availability so you know exactly when you can train.
+          <p className="mt-3 max-w-xl text-lg text-muted-foreground">
+            Find the right coach for your goals, check their availability, and book your session in seconds.
           </p>
 
           <div className="mt-6 flex flex-wrap gap-2">

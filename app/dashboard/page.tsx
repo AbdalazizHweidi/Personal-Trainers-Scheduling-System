@@ -12,6 +12,7 @@ const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   completed: { bg: "#e1e4dc", color: "#5b6670" },
   cancelled: { bg: "#ffe6da", color: "#d94714" },
   cancelled_by_client: { bg: "#ffe6da", color: "#d94714" },
+  no_show: { bg: "#ffe6da", color: "#d94714" },
 };
 
 export default async function DashboardPage() {
